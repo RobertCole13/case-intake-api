@@ -6,4 +6,6 @@ alwaysApply: false
 - In this repo the scoped fetch is findCaseForExaminer(id, examinerId) in
   src/services/cases.ts. Use it; never query prisma.case directly from a route.
 - Deny tests go in tests/api/ and use examiner-a and examiner-b from prisma/seed.ts.
+- Do not edit prisma/schema.prisma. Record the denial route in the existing
+  action string, for example access-denied GET /cases/1042. Do not add a column.
 - Run npm test before reporting done.
