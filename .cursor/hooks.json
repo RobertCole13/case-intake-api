@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      { "command": "node scripts/hooks/deny-dangerous-shell.js", "failClosed": true }
+    ],
+    "beforeReadFile": [
+      { "command": "node scripts/hooks/deny-fixture-reads.js", "failClosed": true }
+    ]
+  }
+}

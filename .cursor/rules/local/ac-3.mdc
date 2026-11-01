@@ -1,0 +1,9 @@
+---
+description: AC-3 specifics for case-intake-api.
+globs: src/routes/**/*.ts, src/services/**/*.ts, tests/api/**/*.ts
+alwaysApply: false
+---
+- In this repo the scoped fetch is findCaseForExaminer(id, examinerId) in
+  src/services/cases.ts. Use it; never query prisma.case directly from a route.
+- Deny tests go in tests/api/ and use examiner-a and examiner-b from prisma/seed.ts.
+- Run npm test before reporting done.

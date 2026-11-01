@@ -1,0 +1,13 @@
+---
+description: AC-3 Access Enforcement. Use for any change that reads or returns a record.
+globs: **/*.ts
+alwaysApply: false
+---
+- Every route that reads or returns a record fetches it through a query scoped
+  to the caller's authorization. Never fetch a record by id alone.
+- A record the caller may not see returns 404 with no record fields. Never 403.
+- Record every denial as an access-denied audit event.
+- Every change to such a route ships a deny test and a success test.
+- Never log record identifiers or contents.
+- Follow this rule unless .harness/system.yml lists an approved deviation
+  for AC-3; then follow the deviation and cite its ID in the plan.

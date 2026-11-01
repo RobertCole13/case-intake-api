@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint and test
+        env:
+          JWT_SECRET: ci-test-secret
+          DATABASE_URL: file:./dev.db
+        run: |
+          npm run lint
+          npm test
+
+      - name: Generate CycloneDX SBOM
+        run: mkdir -p reports && npm sbom --sbom-format cyclonedx > reports/sbom.cdx.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: junit-report
+          path: reports/junit.xml
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: reports/sbom.cdx.json
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript

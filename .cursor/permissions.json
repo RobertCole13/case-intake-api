@@ -1,0 +1,4 @@
+{
+  "terminalAllowlist": ["npm test", "npm run lint", "npm run control", "git status", "git diff", "npm run evidence"],
+  "mcpAllowlist": []
+}

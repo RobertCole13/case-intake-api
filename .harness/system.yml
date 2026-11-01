@@ -1,0 +1,8 @@
+categorization: moderate
+catalog: 800-53r5-5.2.0
+parameters:
+  session_lock_minutes: 15
+implemented_controls:
+  - ac-3
+  - si-10
+deviations: []

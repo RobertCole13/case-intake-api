@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Examiner ids are the JWT `sub` values, for example "examiner-a".
+model Examiner {
+  id          String       @id
+  name        String
+  assignments Assignment[]
+  auditEvents AuditEvent[]
+
+  @@map("examiners")
+}
+
+model Case {
+  id          Int          @id
+  title       String
+  status      String
+  filings     Filing[]
+  assignments Assignment[]
+
+  @@map("cases")
+}
+
+model Assignment {
+  id         Int      @id @default(autoincrement())
+  caseId     Int
+  examinerId String
+  caseRecord Case     @relation(fields: [caseId], references: [id])
+  examiner   Examiner @relation(fields: [examinerId], references: [id])
+
+  @@unique([caseId, examinerId])
+  @@map("assignments")
+}
+
+model Filing {
+  id         Int    @id
+  caseId     Int
+  title      String
+  status     String
+  caseRecord Case   @relation(fields: [caseId], references: [id])
+
+  @@map("filings")
+}
+
+model AuditEvent {
+  id         Int      @id @default(autoincrement())
+  examinerId String
+  action     String
+  caseId     Int
+  createdAt  DateTime @default(now())
+  examiner   Examiner @relation(fields: [examinerId], references: [id])
+
+  @@map("audit_events")
+}
