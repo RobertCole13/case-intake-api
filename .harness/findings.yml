@@ -1,0 +1,9 @@
+# Finding id (SAR / POA&M) → GitHub issue number in this repo.
+# The finding id is not the GitHub issue number. Remediate-finding must
+# resolve the ticket through this map (or by title search) and must never
+# create a new issue for an existing finding.
+findings:
+  "412":
+    github_issue: 1
+  "414":
+    github_issue: 3
