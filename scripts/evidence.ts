@@ -1,7 +1,8 @@
 import { spawn, execSync, type ChildProcess } from "child_process";
 import { createServer } from "net";
-import { mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from "fs";
 import http from "http";
+import os from "os";
 import path from "path";
 import { chromium } from "playwright";
 import { signToken } from "../tests/helpers/token";
@@ -27,6 +28,63 @@ interface Exchange {
 
 function git(args: string): string {
   return execSync(`git ${args}`, { encoding: "utf8" }).trim();
+}
+
+/** Prefer Playwright's path; if the agent sandbox points at a missing cache, use ~/Library/Caches/ms-playwright. */
+function chromiumExecutable(): string | undefined {
+  const wanted = chromium.executablePath();
+  if (existsSync(wanted)) return undefined;
+
+  const arch = process.arch === "arm64" ? "mac-arm64" : "mac-x64";
+  const base = path.join(os.homedir(), "Library", "Caches", "ms-playwright");
+  if (!existsSync(base)) return undefined;
+
+  const pickLatest = (prefix: string): string | undefined =>
+    readdirSync(base)
+      .filter((name) => name.startsWith(prefix))
+      .sort()
+      .at(-1);
+
+  const full = pickLatest("chromium-");
+  if (full) {
+    const candidate = path.join(
+      base,
+      full,
+      `chrome-${arch}`,
+      "Google Chrome for Testing.app",
+      "Contents",
+      "MacOS",
+      "Google Chrome for Testing",
+    );
+    if (existsSync(candidate)) return candidate;
+  }
+
+  const shell = pickLatest("chromium_headless_shell-");
+  if (shell) {
+    const candidate = path.join(
+      base,
+      shell,
+      `chrome-headless-shell-${arch}`,
+      "chrome-headless-shell",
+    );
+    if (existsSync(candidate)) return candidate;
+  }
+
+  return undefined;
+}
+
+function assertChromiumReady(): string | undefined {
+  const executablePath = chromiumExecutable();
+  const resolved = executablePath ?? chromium.executablePath();
+  if (existsSync(resolved)) return executablePath;
+
+  console.error(
+    "Playwright Chromium is not installed (or not visible to this process).",
+  );
+  console.error("Install once on this machine, then re-run evidence:");
+  console.error("  npm run playwright:install");
+  console.error("  npm run evidence -- 412");
+  process.exit(1);
 }
 
 function freePort(): Promise<number> {
@@ -123,6 +181,10 @@ function card(input: {
 }
 
 async function main(): Promise<void> {
+  // Fail before starting the API if Chromium is missing (common after npm install
+  // without playwright:install, or when the agent sandbox points at an empty cache).
+  const executablePath = assertChromiumReady();
+
   const sha = git("rev-parse HEAD");
   const branch = git("rev-parse --abbrev-ref HEAD");
   const dirty = git("status --porcelain").length > 0;
@@ -175,7 +237,10 @@ async function main(): Promise<void> {
     writeFileSync(path.join(outDir, "deny.json"), `${JSON.stringify(record, null, 2)}\n`);
 
     const pngPath = path.join(outDir, `${findingId}-${control}-deny-${sha}.png`);
-    const browser = await chromium.launch({ headless: true });
+    const browser = await chromium.launch({
+      headless: true,
+      ...(executablePath ? { executablePath } : {}),
+    });
     try {
       const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
       await page.setContent(card({ timestamp, sha, branch, environment, denied, allowed }), {

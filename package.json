@@ -10,6 +10,7 @@
     "test": "jest --runInBand",
     "lint": "eslint .",
     "evidence": "ts-node scripts/evidence.ts",
+    "playwright:install": "playwright install chromium",
     "control": "node scripts/control.js",
     "postinstall": "prisma generate"
   },
